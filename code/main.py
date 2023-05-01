@@ -8,9 +8,6 @@ import random
 import math
 import preprocessing
 
-# ensures that we run only on cpu
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-
 class Model(tf.keras.Model):
     def __init__(self):
         """
