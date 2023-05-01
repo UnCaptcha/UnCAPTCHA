@@ -48,41 +48,10 @@ class Model(tf.keras.Model):
         :return: logits - a matrix of shape (num_inputs, num_classes); during training, it would be (batch_size, 2)
         """
         # Remember that
-        # shape of input = (num_inputs (or batch_size), in_height, in_width, in_channels)
-        # shape of filter = (filter_height, filter_width, in_channels, out_channels)
-        # shape of strides = (batch_stride, height_stride, width_stride, channels_stride)
-        epsilon = 0.00001
-        drop_out_rate = .3
-
-        l1_out = tf.nn.conv2d(inputs, self.conv1_filter, padding="SAME", strides=2)
-        mean1, var1 = tf.nn.moments(l1_out, [0,1,2])
-        l1_out = tf.nn.batch_normalization(l1_out, mean1, var1, 0, 1, epsilon)
-        l1_out = tf.nn.relu(l1_out)
-        l1_out = tf.nn.max_pool(l1_out, ksize=3, strides=2, padding="SAME")
-
-        #I PICKED: STRIDE FOR CONVOLUTION & MAX_POOL
-        l2_out = tf.nn.conv2d(l1_out, self.conv2_filter, padding="SAME", strides=1)
-        mean2, var2 = tf.nn.moments(l2_out, [0,1,2])
-        l2_out = tf.nn.batch_normalization(l2_out, mean2, var2, 0, 1, epsilon)
-        l2_out = tf.nn.relu(l2_out)
-        l2_out = tf.nn.max_pool(l2_out, ksize=2, strides=2, padding="SAME")
-
-        if (is_testing): l3_out =       conv2d(l2_out, self.conv3_filter, padding="SAME", strides=[1,1,1,1])
-        else:            l3_out = tf.nn.conv2d(l2_out, self.conv3_filter, padding="SAME", strides=1)
-        mean3, var3 = tf.nn.moments(l3_out, [0,1,2])
-        l3_out = tf.nn.batch_normalization(l3_out, mean3, var3, 0, 1, epsilon)
-        l3_out = tf.nn.relu(l3_out)
-        l3_out = self.flatten(l3_out)
-
-        l4_out = tf.matmul(l3_out, self.weights1) + self.bias1
-        l4_out = tf.nn.dropout(l4_out, drop_out_rate)
-
-        l5_out = tf.matmul(l4_out, self.weights2) + self.bias2
-        l5_out = tf.nn.dropout(l5_out, drop_out_rate)
-
-        l6_out = tf.matmul(l5_out, self.weights3) + self.bias3
-
-        return l6_out
+        # shape of input = (batch_size, in_height, in_width
+        # shape of filter = (filter_height, filter_width)
+        # shape of strides = (batch_stride, height_stride, width_stride)
+        pass
 
     def loss(self, logits, labels):
         """
