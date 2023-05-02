@@ -6,16 +6,15 @@ import tensorflow as tf
 import numpy as np
 import random
 import math
+from preprocess import get_data
 
 class Model(tf.keras.Model):
     def __init__(self):
         super(Model, self).__init__()
 
         #Initialize hyperparameters
-        self.batch_size = 500
         self.num_classes = 36
         self.learning_rate = 0.001
-        self.optimizer     = tf.keras.optimizers.Adam(self.learning_rate)
         self.image_size = (24,24,1)
 
         #Initialize the model
@@ -125,7 +124,28 @@ def visualize_results(image_inputs, probabilities, image_labels, first_label, se
 
 
 def main():
-    pass
+    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data("./../processed_data")
+    flatten = tf.keras.layers.Flatten()
+    X_train = flatten(X_train, axis=1)
+    X_val = flatten(X_val, axis=1)
+    Y_train = flatten(Y_train, axis=1)
+    Y_val = flatten(X_val, axis=1)
+
+    model = Model()
+    model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy,
+                  optimizer=tf.keras.optimizers.Adam(),
+                  metrics= [
+                      tf.keras.metrics.BinaryCrossentropy()
+                  ])
+    model.fit(
+        X_train,
+        Y_train,
+        epochs=3,
+        batch_size=500,
+        validation_data=(X_val, Y_val)
+    )
+
+    test_loss, test_accuracy = model.evaluate(X_test, Y_test)
 
 
 if __name__ == '__main__':
