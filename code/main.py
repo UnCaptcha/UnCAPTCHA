@@ -124,15 +124,24 @@ def visualize_results(image_inputs, probabilities, image_labels, first_label, se
 
 
 def main():
-    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data("./../processed_data")
-    flatten = tf.keras.layers.Flatten()
-    X_train = flatten(X_train, axis=1)
-    X_val = flatten(X_val, axis=1)
-    Y_train = flatten(Y_train, axis=1)
-    Y_val = flatten(X_val, axis=1)
+    #Import and reshape
+    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data(.3, "./../processed_data/")
+    #Convert input to properly shaped and typed tensors
+    X_train = tf.convert_to_tensor(np.asarray(np.reshape(X_train, (-1, *X_train.shape[-2:]))).astype(np.float32))
+    X_val   = tf.convert_to_tensor(np.asarray(np.reshape(X_val  , (-1, *X_val.shape[-2:]))).astype(np.float32))
+    Y_train = tf.convert_to_tensor(np.asarray(np.reshape(Y_train, (-1))))
+    Y_val   = tf.convert_to_tensor(np.asarray(np.reshape(Y_val  , (-1))))
+
+    #Don't reshape test, because we need to preserve CAPTCHAs but convert to tensor
+    X_test  = tf.convert_to_tensor(np.asarray(X_test).astype(np.float32))
+    Y_test  = tf.convert_to_tensor(np.asarray(Y_test))
+
+    #Expand Dims
+    X_train = tf.expand_dims(X_train, axis=-1)
+    X_val   = tf.expand_dims(X_val  , axis=-1)
 
     model = Model()
-    model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy,
+    model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                   optimizer=tf.keras.optimizers.Adam(),
                   metrics= [
                       tf.keras.metrics.BinaryCrossentropy()
@@ -144,8 +153,6 @@ def main():
         batch_size=500,
         validation_data=(X_val, Y_val)
     )
-
-    test_loss, test_accuracy = model.evaluate(X_test, Y_test)
 
 
 if __name__ == '__main__':

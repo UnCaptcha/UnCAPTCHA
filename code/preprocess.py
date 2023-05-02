@@ -1,3 +1,8 @@
+import numpy as np
+import cv2
+import os
+from sklearn.model_selection import train_test_split
+
 def get_data(test_split, processed_data_path):
     images = []
     labels = []
@@ -7,14 +12,14 @@ def get_data(test_split, processed_data_path):
     for image_path in sorted(os.listdir(processed_data_path)):
         count += 1
         image = cv2.imread(processed_data_path + image_path, cv2.IMREAD_GRAYSCALE)
-        
+
         label = image_path.split('.')[0][-1]
         captcha.append(image)
         captcha_labels.append(label)
 
         if count % 4 == 0:
             images.append(captcha)
-            labels.append(captcha_labels) 
+            labels.append(captcha_labels)
             captcha = []
             captcha_labels = []
 
