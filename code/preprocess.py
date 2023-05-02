@@ -25,5 +25,7 @@ def get_data(test_split, processed_data_path):
 
     X_train, X_testval, Y_train, Y_testval = train_test_split(np.asarray(images, dtype=object), np.asarray(labels, dtype=object), test_size=test_split)
     X_test, X_val, Y_test, Y_val = train_test_split(X_testval, Y_testval, test_size=0.5)
+
     return X_train, X_test, X_val, Y_train, Y_test, Y_val
 
+X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data(0.3, "./../processed_data/")

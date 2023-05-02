@@ -7,13 +7,15 @@ import numpy as np
 import random
 import math
 from preprocess import get_data
+from sklearn import preprocessing
+
 
 class Model(tf.keras.Model):
     def __init__(self):
         super(Model, self).__init__()
 
         #Initialize hyperparameters
-        self.num_classes = 36
+        self.num_classes = 31
         self.learning_rate = 0.001
         self.image_size = (24,24,1)
 
@@ -44,12 +46,12 @@ class Model(tf.keras.Model):
         return self.model(inputs)
 
 
-    def loss(self, logits, labels):
-        return tf.keras.losses.SparseCategoricalCrossentropy(logits, labels)
+    # def loss(self, logits, labels):
+    #     return tf.keras.losses.SparseCategoricalCrossentropy(logits, labels)
 
 
-    def accuracy(self, logits, labels):
-        pass
+    # def accuracy(self, logits, labels):
+    #     pass
 
 
 def train(model, train_inputs, train_labels):
@@ -122,10 +124,30 @@ def visualize_results(image_inputs, probabilities, image_labels, first_label, se
     plotter(incorrect, 'Incorrect')
     plt.show()
 
+def run_tests(model, X_test, Y_test):
+    X_test = np.reshape(X_test, (-1, *X_test.shape[-2:]))
+    Y_test = np.reshape(Y_test, (-1))
+    
+    probs = model.predict(X_test, verbose=0)
+    diff = np.argmax(probs, axis=1) - Y_test
+    accuracy = np.where(diff == 0, 1, 0)
+
+    group_acc = np.array_split(diff, diff.shape[0]//4)
+    group_acc = np.apply_along_axis((lambda x: 1 if np.all(x == 0) else 0), axis=1, arr=group_acc)
+
+    return np.mean(accuracy), np.mean(group_acc)
+
 
 def main():
     #Import and reshape
     X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data(.3, "./../processed_data/")
+
+    char_encoder = preprocessing.LabelEncoder().fit(np.concatenate((Y_train.reshape(-1), Y_test.reshape(-1), Y_val.reshape(-1))))
+    orig_shapes = [Y_train.shape[0], Y_test.shape[0], Y_val.shape[0]]
+    Y_train = char_encoder.transform(Y_train.reshape(-1)).reshape((orig_shapes[0], 4))
+    Y_test = char_encoder.transform(Y_test.reshape(-1)).reshape((orig_shapes[1], 4))
+    Y_val = char_encoder.transform(Y_val.reshape(-1)).reshape((orig_shapes[2], 4))
+
     #Convert input to properly shaped and typed tensors
     X_train = tf.convert_to_tensor(np.asarray(np.reshape(X_train, (-1, *X_train.shape[-2:]))).astype(np.float32))
     X_val   = tf.convert_to_tensor(np.asarray(np.reshape(X_val  , (-1, *X_val.shape[-2:]))).astype(np.float32))
@@ -140,19 +162,38 @@ def main():
     X_train = tf.expand_dims(X_train, axis=-1)
     X_val   = tf.expand_dims(X_val  , axis=-1)
 
+    #One hot encode
+    Y_val   = tf.one_hot(Y_val  , depth=31, axis=-1)
+    Y_train = tf.one_hot(Y_train, depth=31, axis=-1)
+
+    # Compile and fit model
     model = Model()
-    model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                  optimizer=tf.keras.optimizers.Adam(),
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=tf.keras.optimizers.Adam(.0001),
                   metrics= [
-                      tf.keras.metrics.BinaryCrossentropy()
-                  ])
+                    tf.keras.metrics.CategoricalCrossentropy()
+                    ])
     model.fit(
         X_train,
         Y_train,
         epochs=3,
-        batch_size=500,
+        batch_size=256,
         validation_data=(X_val, Y_val)
     )
+
+    # Save model for future testing
+    model.save('./../models/segmented_2')
+    
+    # Run random CAPTCHA test
+    output = model.predict(X_test[7], verbose=0)
+    print("Secret CAPTCHA:")
+    print(char_encoder.inverse_transform(Y_test[7]))
+    print("Model guess:")
+    print(char_encoder.inverse_transform(np.argmax(output, axis=1)))
+
+    # Print individual and captcha-based accuracy
+    indiv_acc, group_acc = run_tests(model, X_test, Y_test)
+    print(f"Individual accuracy: {round(100*indiv_acc, 2)}% \nCaptcha accuracy: {round(100*group_acc, 2)}%")
 
 
 if __name__ == '__main__':
