@@ -6,7 +6,7 @@ import tensorflow as tf
 import numpy as np
 import random
 import math
-from preprocess import get_data
+from preprocess import get_data_ocr
 from sklearn import preprocessing
 
 
@@ -34,93 +34,18 @@ class Model(tf.keras.Model):
             tf.keras.layers.LeakyReLU(),
             tf.keras.layers.MaxPool2D(pool_size=(2,2)),
 
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(256, activation='leaky_relu'),
-            tf.keras.layers.Dense(self.num_classes, activation="softmax")
+            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(100, return_sequences=True)),
+            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(50 , return_sequences=True))
+
+            # tf.keras.layers.Flatten(),
+            # tf.keras.layers.Dense(256, activation='leaky_relu'),
+            # tf.keras.layers.Dense(self.num_classes, activation="softmax")
         ])
 
 
     def call(self, inputs):
         return self.model(inputs)
 
-
-    # def loss(self, logits, labels):
-    #     return tf.keras.losses.SparseCategoricalCrossentropy(logits, labels)
-
-
-    # def accuracy(self, logits, labels):
-    #     pass
-
-
-def train(model, train_inputs, train_labels):
-    pass
-
-
-def test(model, test_inputs, test_labels):
-    pass
-
-
-def visualize_loss(losses):
-    """
-    Taken from HW3 support code:
-    Uses Matplotlib to visualize the losses of our model.
-    :param losses: list of loss data stored from train. Can use the model's loss_list
-    field
-    :return: doesn't return anything, a plot should pop-up
-    """
-    x = [i for i in range(len(losses))]
-    plt.plot(x, losses)
-    plt.title('Loss per batch')
-    plt.xlabel('Batch')
-    plt.ylabel('Loss')
-    plt.show()
-
-
-def visualize_results(image_inputs, probabilities, image_labels, first_label, second_label):
-    """
-    Taken from HW3 Support Code:
-    Uses Matplotlib to visualize the correct and incorrect results of our model.
-    :param image_inputs: image data from get_data(), limited to 50 images, shape (50, 32, 32, 3)
-    :param probabilities: the output of model.call(), shape (50, num_classes)
-    :param image_labels: the labels from get_data(), shape (50, num_classes)
-    :param first_label: the name of the first class, "cat"
-    :param second_label: the name of the second class, "dog"
-    :return: doesn't return anything, two plots should pop-up, one for correct results,
-    one for incorrect results
-    """
-    # Helper function to plot images into 10 columns
-    def plotter(image_indices, label):
-        nc = 10
-        nr = math.ceil(len(image_indices) / 10)
-        fig = plt.figure()
-        fig.suptitle("{} Examples\nPL = Predicted Label\nAL = Actual Label".format(label))
-        for i in range(len(image_indices)):
-            ind = image_indices[i]
-            ax = fig.add_subplot(nr, nc, i+1)
-            ax.imshow(image_inputs[ind], cmap="Greys")
-            pl = first_label if predicted_labels[ind] == 0.0 else second_label
-            al = first_label if np.argmax(
-                image_labels[ind], axis=0) == 0 else second_label
-            ax.set(title="PL: {}\nAL: {}".format(pl, al))
-            plt.setp(ax.get_xticklabels(), visible=False)
-            plt.setp(ax.get_yticklabels(), visible=False)
-            ax.tick_params(axis='both', which='both', length=0)
-
-    predicted_labels = np.argmax(probabilities, axis=1)
-    num_images = image_inputs.shape[0]
-
-    # Separate correct and incorrect images
-    correct = []
-    incorrect = []
-    for i in range(num_images):
-        if predicted_labels[i] == np.argmax(image_labels[i], axis=0):
-            correct.append(i)
-        else:
-            incorrect.append(i)
-
-    plotter(correct, 'Correct')
-    plotter(incorrect, 'Incorrect')
-    plt.show()
 
 def run_tests(model, X_test, Y_test):
     X_test = np.reshape(X_test, (-1, *X_test.shape[-2:]))
@@ -150,17 +75,20 @@ def create_model(input_shape, ohe_size):
             tf.keras.layers.Conv2D(128, (3,3), padding="same", activation="leaky_relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.LeakyReLU(),
-            tf.keras.layers.MaxPool2D(pool_size=(2,2)),
+            tf.keras.layers.MaxPool2D(pool_size=(2,1)), # output size: 3,3,128
 
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(256, activation='leaky_relu'),
-            tf.keras.layers.Dense(ohe_size, activation="softmax")
+            tf.keras.layers.Reshape((input_shape[-2] // 4, input_shape[-3] // 8 * 128)),
+
+            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(input_shape[-3] // 8 * 128, return_sequences=True)),
+            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(input_shape[-3] // 8 * 128, return_sequences=True)),
+
+            tf.keras.layers.Dense(ohe_size+1, activation="softmax")
         ])
     return model
 
 def main():
     #Import and reshape
-    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data(.3, "./../barcoded_data/")
+    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data_ocr(.3, "./../data/")
 
     char_encoder = preprocessing.LabelEncoder().fit(np.concatenate((Y_train.reshape(-1), Y_test.reshape(-1), Y_val.reshape(-1))))
     ohe_size = np.max(char_encoder.transform(np.concatenate((Y_train.reshape(-1), Y_test.reshape(-1), Y_val.reshape(-1)))))
@@ -170,10 +98,10 @@ def main():
     Y_val = char_encoder.transform(Y_val.reshape(-1)).reshape((orig_shapes[2], 4))
 
     #Convert input to properly shaped and typed tensors
-    X_train = tf.convert_to_tensor(np.asarray(np.reshape(X_train, (-1, *X_train.shape[-2:]))).astype(np.float32))
-    X_val   = tf.convert_to_tensor(np.asarray(np.reshape(X_val  , (-1, *X_val.shape[-2:]))).astype(np.float32))
-    Y_train = tf.convert_to_tensor(np.asarray(np.reshape(Y_train, (-1))))
-    Y_val   = tf.convert_to_tensor(np.asarray(np.reshape(Y_val  , (-1))))
+    X_train  = tf.convert_to_tensor(np.asarray(X_train).astype(np.float32))
+    Y_train  = tf.convert_to_tensor(np.asarray(Y_train))
+    X_val  = tf.convert_to_tensor(np.asarray(X_val).astype(np.float32))
+    Y_val  = tf.convert_to_tensor(np.asarray(Y_val))
 
     #Don't reshape test, because we need to preserve CAPTCHAs but convert to tensor
     X_test  = tf.convert_to_tensor(np.asarray(X_test).astype(np.float32))
@@ -184,18 +112,33 @@ def main():
     X_val   = tf.expand_dims(X_val  , axis=-1)
 
     #One hot encode
-    Y_val   = tf.one_hot(Y_val  , depth=31, axis=-1)
-    Y_train = tf.one_hot(Y_train, depth=31, axis=-1)
+    #Y_val   = tf.one_hot(Y_val  , depth=ohe_size, axis=-1)
+    #Y_train = tf.one_hot(Y_train, depth=ohe_size, axis=-1)
 
     input_shape=(X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
+    print(input_shape)
 
+
+    def ctc(y_true, y_pred):
+        print(y_true.shape)
+        y_true = tf.cast(y_true, tf.int32)
+        batch_len = tf.cast(tf.shape(y_true)[0], dtype="int64")
+        input_length = tf.cast(tf.shape(y_pred)[1], dtype="int64")
+        label_length = tf.cast(tf.shape(y_true)[1], dtype="int64")
+
+        input_length = input_length * tf.ones(shape=(batch_len, 1), dtype="int64")
+        label_length = label_length * tf.ones(shape=(batch_len, 1), dtype="int64")
+
+        #input_length = tf.math.reduce_sum(y_pred, axis=-1, keepdims=False)
+        #label_length = tf.math.count_nonzero(y_true, axis=-1, keepdims=False, dtype=tf.int32)
+
+        return tf.keras.backend.ctc_batch_cost(y_true, y_pred, label_length=label_length, input_length=input_length)
     # Compile and fit model
     model = create_model(input_shape, ohe_size)
-    model.compile(loss='categorical_crossentropy',
-                  optimizer=tf.keras.optimizers.Adam(.0001),
-                  metrics= [
-                    tf.keras.metrics.CategoricalCrossentropy()
-                    ])
+    model.compile(loss=ctc,
+                  optimizer=tf.keras.optimizers.Adam(.0001))
+
+    print(Y_train.shape)
     model.fit(
         X_train,
         Y_train,
