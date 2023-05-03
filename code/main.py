@@ -135,12 +135,35 @@ def run_tests(model, X_test, Y_test):
 
     return np.mean(accuracy), np.mean(group_acc)
 
+def create_model(input_shape, ohe_size):
+    model = tf.keras.models.Sequential([
+            tf.keras.layers.Conv2D(32, (3,3), padding="same", input_shape=input_shape),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.LeakyReLU(),
+            tf.keras.layers.MaxPool2D(pool_size=(2,2)),
+
+            tf.keras.layers.Conv2D(64, (3,3), padding="same", activation="leaky_relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.LeakyReLU(),
+            tf.keras.layers.MaxPool2D(pool_size=(2,2)),
+
+            tf.keras.layers.Conv2D(128, (3,3), padding="same", activation="leaky_relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.LeakyReLU(),
+            tf.keras.layers.MaxPool2D(pool_size=(2,2)),
+
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(256, activation='leaky_relu'),
+            tf.keras.layers.Dense(ohe_size, activation="softmax")
+        ])
+    return model
 
 def main():
     #Import and reshape
-    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data(.3, "./../processed_data/")
+    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data(.3, "./../barcoded_data/")
 
     char_encoder = preprocessing.LabelEncoder().fit(np.concatenate((Y_train.reshape(-1), Y_test.reshape(-1), Y_val.reshape(-1))))
+    ohe_size = np.max(char_encoder.transform(np.concatenate((Y_train.reshape(-1), Y_test.reshape(-1), Y_val.reshape(-1)))))
     orig_shapes = [Y_train.shape[0], Y_test.shape[0], Y_val.shape[0]]
     Y_train = char_encoder.transform(Y_train.reshape(-1)).reshape((orig_shapes[0], 4))
     Y_test = char_encoder.transform(Y_test.reshape(-1)).reshape((orig_shapes[1], 4))
@@ -164,28 +187,33 @@ def main():
     Y_val   = tf.one_hot(Y_val  , depth=31, axis=-1)
     Y_train = tf.one_hot(Y_train, depth=31, axis=-1)
 
-    # Compile and fit model
-    model = Model()
-    model.compile(loss='categorical_crossentropy',
-                  optimizer=tf.keras.optimizers.Adam(.0001),
-                  metrics= [
-                    tf.keras.metrics.CategoricalCrossentropy()
-                    ])
-    model.fit(
-        X_train,
-        Y_train,
-        epochs=3,
-        batch_size=256,
-        validation_data=(X_val, Y_val)
-    )
+    input_shape=(X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
+    
+    # # Compile and fit model
+    # model = create_model(input_shape, ohe_size)
+    # model.compile(loss='categorical_crossentropy',
+    #               optimizer=tf.keras.optimizers.Adam(.0001),
+    #               metrics= [
+    #                 tf.keras.metrics.CategoricalCrossentropy()
+    #                 ])
+    # model.fit(
+    #     X_train,
+    #     Y_train,
+    #     epochs=5,
+    #     batch_size=256,
+    #     validation_data=(X_val, Y_val)
+    # )
 
-    # Save model for future testing
-    model.save('./../models/segmented_2')
+    # # Save model for future testing
+    # model.save('./../models/barcoded')
+
+    model = tf.keras.models.load_model("./../models/barcoded")
+    print(model.summary())
 
     # Run random CAPTCHA test
     output = model.predict(X_test[7], verbose=0)
     print("Secret CAPTCHA:")
-    print(char_encoder.inverse_transform(Y_test[7]))
+    print(char_encoder.inverse_transform(Y_test[6]))
     print("Model guess:")
     print(char_encoder.inverse_transform(np.argmax(output, axis=1)))
 
