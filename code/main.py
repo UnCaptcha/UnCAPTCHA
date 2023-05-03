@@ -11,17 +11,15 @@ from sklearn import preprocessing
 
 
 class Model(tf.keras.Model):
-    def __init__(self):
+    def __init__(self, input_shape, num_classes):
         super(Model, self).__init__()
 
         #Initialize hyperparameters
-        self.num_classes = 31
-        self.learning_rate = 0.001
-        self.image_size = (24,24,1)
+        self.num_classes = num_classes
 
         #Initialize the model
         self.model = tf.keras.models.Sequential([
-            tf.keras.layers.Conv2D(32, (3,3), padding="same"),
+            tf.keras.layers.Conv2D(32, (3,3), padding="same", input_shape=input_shape),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.LeakyReLU(),
             tf.keras.layers.MaxPool2D(pool_size=(2,2)),
@@ -127,7 +125,7 @@ def visualize_results(image_inputs, probabilities, image_labels, first_label, se
 def run_tests(model, X_test, Y_test):
     X_test = np.reshape(X_test, (-1, *X_test.shape[-2:]))
     Y_test = np.reshape(Y_test, (-1))
-    
+
     probs = model.predict(X_test, verbose=0)
     diff = np.argmax(probs, axis=1) - Y_test
     accuracy = np.where(diff == 0, 1, 0)
@@ -183,7 +181,7 @@ def main():
 
     # Save model for future testing
     model.save('./../models/segmented_2')
-    
+
     # Run random CAPTCHA test
     output = model.predict(X_test[7], verbose=0)
     print("Secret CAPTCHA:")
