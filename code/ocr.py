@@ -48,7 +48,6 @@ class Model(tf.keras.Model):
 
 
 def run_tests(model, X_test, Y_test):
-    X_test = np.reshape(X_test, (-1, *X_test.shape[-2:]))
     Y_test = np.reshape(Y_test, (-1))
 
     probs = model.predict(X_test, verbose=0)
@@ -75,9 +74,9 @@ def create_model(input_shape, ohe_size):
             tf.keras.layers.Conv2D(128, (3,3), padding="same", activation="leaky_relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.LeakyReLU(),
-            tf.keras.layers.MaxPool2D(pool_size=(2,1)), # output size: 3,3,128
+            tf.keras.layers.MaxPool2D(pool_size=(2,3)), # output size: 3,3,128
 
-            tf.keras.layers.Reshape((input_shape[-2] // 4, input_shape[-3] // 8 * 128)),
+            tf.keras.layers.Reshape((input_shape[-2] // 12, input_shape[-3] // 8 * 128)),
 
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(input_shape[-3] // 8 * 128, return_sequences=True)),
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(input_shape[-3] // 8 * 128, return_sequences=True)),
@@ -120,7 +119,6 @@ def main():
 
 
     def ctc(y_true, y_pred):
-        print(y_true.shape)
         y_true = tf.cast(y_true, tf.int32)
         batch_len = tf.cast(tf.shape(y_true)[0], dtype="int64")
         input_length = tf.cast(tf.shape(y_pred)[1], dtype="int64")
@@ -134,11 +132,10 @@ def main():
 
         return tf.keras.backend.ctc_batch_cost(y_true, y_pred, label_length=label_length, input_length=input_length)
     # Compile and fit model
-    model = create_model(input_shape, ohe_size)
+    model = create_model(input_shape, (ohe_size+1))
     model.compile(loss=ctc,
                   optimizer=tf.keras.optimizers.Adam(.0001))
 
-    print(Y_train.shape)
     model.fit(
         X_train,
         Y_train,

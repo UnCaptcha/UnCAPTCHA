@@ -160,7 +160,7 @@ def create_model(input_shape, ohe_size):
 
 def main():
     #Import and reshape
-    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data(.3, "./../barcoded_data/")
+    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data(.3, "./../processed_data/")
 
     char_encoder = preprocessing.LabelEncoder().fit(np.concatenate((Y_train.reshape(-1), Y_test.reshape(-1), Y_val.reshape(-1))))
     ohe_size = np.max(char_encoder.transform(np.concatenate((Y_train.reshape(-1), Y_test.reshape(-1), Y_val.reshape(-1)))))
@@ -199,15 +199,15 @@ def main():
     model.fit(
         X_train,
         Y_train,
-        epochs=10,
+        epochs=4,
         batch_size=256,
         validation_data=(X_val, Y_val)
     )
 
     # Save model for future testing
-    model.save('./../models/barcoded')
+    model.save('./../models/segmented_2', save_format="h5")
 
-    model = tf.keras.models.load_model("./../models/barcoded")
+    model = tf.keras.models.load_model("./../models/segmented_2")
     print(model.summary())
 
     # Run random CAPTCHA test
