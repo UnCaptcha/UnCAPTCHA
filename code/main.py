@@ -121,8 +121,8 @@ def main():
     model.fit(
         X_train,
         Y_train,
-        epochs=4,
-        batch_size=256,
+        epochs=3,
+        batch_size=265,
         validation_data=(X_val, Y_val)
     )
 

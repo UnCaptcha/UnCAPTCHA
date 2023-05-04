@@ -47,17 +47,19 @@ class Model(tf.keras.Model):
         return self.model(inputs)
 
 
-def run_tests(model, X_test, Y_test):
-    Y_test = np.reshape(Y_test, (-1))
-
+def get_accuracy(model, X_test, Y_test):
     probs = model.predict(X_test, verbose=0)
-    diff = np.argmax(probs, axis=1) - Y_test
-    accuracy = np.where(diff == 0, 1, 0)
+    output = np.argmax(probs, axis=2)
 
-    group_acc = np.array_split(diff, diff.shape[0]//4)
-    group_acc = np.apply_along_axis((lambda x: 1 if np.all(x == 0) else 0), axis=1, arr=group_acc)
+    prediction = np.asarray([np.asarray(tf.unique_with_counts(x)[0]) for x in output])
+    Y_test = np.asarray(Y_test)
+    count = 0
+    total = Y_test.shape[0]
+    for x, y in zip(prediction, Y_test):
+        if len(x) == len(y) and np.all(np.equal(x, y)): count += 1
+    accuracy = count / total
 
-    return np.mean(accuracy), np.mean(group_acc)
+    return accuracy
 
 def create_model(input_shape, ohe_size):
     model = tf.keras.models.Sequential([
@@ -87,7 +89,7 @@ def create_model(input_shape, ohe_size):
 
 def main():
     #Import and reshape
-    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data_ocr(.3, "./../data/")
+    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data_ocr(.3, "./processed_whole_data/")
 
     char_encoder = preprocessing.LabelEncoder().fit(np.concatenate((Y_train.reshape(-1), Y_test.reshape(-1), Y_val.reshape(-1))))
     ohe_size = np.max(char_encoder.transform(np.concatenate((Y_train.reshape(-1), Y_test.reshape(-1), Y_val.reshape(-1)))))
@@ -109,10 +111,7 @@ def main():
     #Expand Dims
     X_train = tf.expand_dims(X_train, axis=-1)
     X_val   = tf.expand_dims(X_val  , axis=-1)
-
-    #One hot encode
-    #Y_val   = tf.one_hot(Y_val  , depth=ohe_size, axis=-1)
-    #Y_train = tf.one_hot(Y_train, depth=ohe_size, axis=-1)
+    X_test  = tf.expand_dims(X_test , axis=-1)
 
     input_shape=(X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
     print(input_shape)
@@ -134,32 +133,38 @@ def main():
     # Compile and fit model
     model = create_model(input_shape, (ohe_size+1))
     model.compile(loss=ctc,
-                  optimizer=tf.keras.optimizers.Adam(.0001))
+                    optimizer=tf.keras.optimizers.Adam(.0001))
+
+    model.summary()
 
     model.fit(
         X_train,
         Y_train,
-        epochs=10,
+        epochs=80,
         batch_size=256,
         validation_data=(X_val, Y_val)
     )
 
     # Save model for future testing
-    model.save('./../models/barcoded')
+    model.save('./models/ocr', save_format="h5")
 
-    model = tf.keras.models.load_model("./../models/barcoded")
-    print(model.summary())
+    loaded_model = tf.keras.models.load_model("./models/ocr", custom_objects={'ctc': ctc})
+    print(loaded_model.summary())
 
     # Run random CAPTCHA test
-    output = model.predict(X_test[6], verbose=0)
+    output = model.predict(X_test[1:2], verbose=0)
     print("Secret CAPTCHA:")
-    print(char_encoder.inverse_transform(Y_test[6]))
+    print(char_encoder.inverse_transform(Y_test[1]))
     print("Model guess:")
-    print(char_encoder.inverse_transform(np.argmax(output, axis=1)))
+    output = np.transpose(output, axes=[1, 0, 2]).squeeze()
+    print(output)
+    print(np.argmax(output, axis=1))
 
-    # Print individual and captcha-based accuracy
-    indiv_acc, group_acc = run_tests(model, X_test, Y_test)
-    print(f"Individual accuracy: {round(100*indiv_acc, 2)}% \nCaptcha accuracy: {round(100*group_acc, 2)}%")
+    prediction = tf.unique_with_counts(np.argmax(output, axis=1))
+    print(prediction)
+
+    print("Accuracy:")
+    print(get_accuracy(model, X_test, Y_test))
 
 
 if __name__ == '__main__':

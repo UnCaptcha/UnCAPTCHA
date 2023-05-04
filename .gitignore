@@ -5,7 +5,4 @@ __pycache__/
 data/
 processed_data/
 barcoded_data/
-data_difficult/
-barcoded_data_difficult/
 processed_whole_data/
-processed_whole_data_difficult/
