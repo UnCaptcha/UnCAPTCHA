@@ -1,51 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from sklearn import preprocessing
-from preprocess import get_data_ocr
-
-
-def retrieve_data(test_split, data_path):
-    """
-    Function to handle reshaping and formatting of data.
-
-    Inputs:
-    test_split - Percent of data set asside for testing
-    data_path - Path to data to be used
-
-    Outputs:
-    X_train, X_test, X_val, Y_train, Y_test, Y_val - Divided data (X) and labels (Y)
-    char_encoder - Encoder used to ohe our data
-    encoder_size - Number of ohe values used.
-    """
-    # Import and reshape
-    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data_ocr(test_split, data_path)
-
-    # Generate a one hot encoder for the dataset
-    char_encoder = preprocessing.LabelEncoder().fit(np.concatenate((Y_train.reshape(-1), Y_test.reshape(-1), Y_val.reshape(-1))))
-    encoder_size = np.max(char_encoder.transform(np.concatenate((Y_train.reshape(-1), Y_test.reshape(-1), Y_val.reshape(-1)))))
-    orig_shapes  = [Y_train.shape[0], Y_test.shape[0], Y_val.shape[0]]
-
-    # Encode from characters to numbers and reshape all of the labels
-    Y_train = char_encoder.transform(Y_train.reshape(-1)).reshape((orig_shapes[0], 4))
-    Y_test  = char_encoder.transform(Y_test.reshape(-1)).reshape((orig_shapes[1], 4))
-    Y_val   = char_encoder.transform(Y_val.reshape(-1)).reshape((orig_shapes[2], 4))
-
-    # Convert input to properly shaped and typed tensors
-    X_train = tf.convert_to_tensor(np.asarray(X_train).astype(np.float32))
-    Y_train = tf.convert_to_tensor(np.asarray(Y_train))
-    X_val   = tf.convert_to_tensor(np.asarray(X_val).astype(np.float32))
-    Y_val   = tf.convert_to_tensor(np.asarray(Y_val))
-
-    # Don't reshape test, because we need to keep letters together as one CAPTCHA, but convert to tensor
-    X_test  = tf.convert_to_tensor(np.asarray(X_test).astype(np.float32))
-    Y_test  = tf.convert_to_tensor(np.asarray(Y_test))
-
-    # Expand Dims
-    X_train = tf.expand_dims(X_train, axis=-1)
-    X_val   = tf.expand_dims(X_val  , axis=-1)
-    X_test  = tf.expand_dims(X_test , axis=-1)
-
-    return X_train, X_test, X_val, Y_train, Y_test, Y_val, char_encoder, encoder_size
+from preprocess import retrieve_data_ocr
 
 
 def create_model(input_shape, encoder_size):
@@ -88,7 +43,6 @@ def create_model(input_shape, encoder_size):
     return model
 
 
-# CTC defined loss function for calculated loss of a CRNN.
 def ctc(y_true, y_pred):
     """
     A custom loss function built off of Keras' ctc_batch_cost which calculates loss for our CRNN
@@ -176,7 +130,7 @@ def print_results(model, char_encoder, X_test, Y_test):
 
 def main():
     X_train, X_test, X_val, Y_train, Y_test, Y_val, char_encoder, encoder_size = \
-        retrieve_data(.3, "./processed_whole_data/")
+        retrieve_data_ocr(.3, "./processed_whole_data/")
 
     # Input shape is the shape of X_train without batch_size attached
     input_shape=(X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
