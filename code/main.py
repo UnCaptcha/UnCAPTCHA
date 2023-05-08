@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from preprocess import retrieve_data
+from preprocess import get_split_data
 
 
 def create_model(input_shape, encoder_size):
@@ -96,7 +96,7 @@ def print_results(model, char_encoder, X_test, Y_test):
 
 def main():
     X_train, X_test, X_val, Y_train, Y_test, Y_val, char_encoder, encoder_size = \
-        retrieve_data(.3, "./processed_data/")
+        get_split_data("./../split_processed_data/")
 
     input_shape=(X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
 

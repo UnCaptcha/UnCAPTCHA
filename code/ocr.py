@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from preprocess import retrieve_data_ocr
+from preprocess import get_split_data_ocr
 
 
 def create_model(input_shape, encoder_size):
@@ -101,13 +101,12 @@ def get_accuracy(model, X_test, Y_test):
     return accuracy
 
 
-def print_results(model, char_encoder, X_test, Y_test):
+def print_results(model, X_test, Y_test):
     """
     Prints an example CAPTCHA prediction vs. actual and prints accuracy
 
     Inputs:
     model - Model to get accuracy and example with
-    char_encoder - one hot encoder used to labels of dataset
     X_test - CAPTCHA images to test with
     Y_test - True CAPTCHA labels to compare to
     """
@@ -117,7 +116,8 @@ def print_results(model, char_encoder, X_test, Y_test):
     prediction_captcha = np.asarray([np.asarray(tf.unique_with_counts(x)[0]) for x in output])
 
     # Decode label's one hot encoding
-    real_captcha = char_encoder.inverse_transform(Y_test[1])
+    alphabet_key = dict(zip(range(0, 33), list('23456789ABCDEFGHJKLMNPQRSTUVWXYZ_')))
+    real_captcha = [alphabet_key[i] for i in Y_test[1]]
 
     # Get accuracy
     accuracy = get_accuracy(model, X_test, Y_test)
@@ -129,8 +129,9 @@ def print_results(model, char_encoder, X_test, Y_test):
 
 
 def main():
-    X_train, X_test, X_val, Y_train, Y_test, Y_val, char_encoder, encoder_size = \
-        retrieve_data_ocr(.3, "./processed_whole_data/")
+    encoder_size = 31
+    X_train, Y_train, X_test, Y_test, X_val, Y_val = \
+        get_split_data_ocr("./../split_processed_whole_data/")
 
     # Input shape is the shape of X_train without batch_size attached
     input_shape=(X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
@@ -152,7 +153,7 @@ def main():
     # Save model for future testing
     model.save('./models/ocr', save_format="h5")
 
-    print_results(model, char_encoder, X_test, Y_test)
+    print_results(model, X_test, Y_test)
 
 
 
