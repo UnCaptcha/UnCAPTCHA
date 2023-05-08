@@ -117,8 +117,8 @@ def get_data(test_split, processed_data_path):
             captcha = []
             captcha_labels = []
 
-    X_train, X_testval, Y_train, Y_testval = train_test_split(np.asarray(images, dtype=object), np.asarray(labels, dtype=object), test_size=test_split)
-    X_test, X_val, Y_test, Y_val = train_test_split(X_testval, Y_testval, test_size=0.5)
+    X_train, X_testval, Y_train, Y_testval = train_test_split(np.asarray(images, dtype=object), np.asarray(labels, dtype=object), test_size=test_split, random_state=42)
+    X_test, X_val, Y_test, Y_val = train_test_split(X_testval, Y_testval, test_size=0.5, random_state=42)
 
     return X_train, X_test, X_val, Y_train, Y_test, Y_val
 
@@ -134,8 +134,8 @@ def get_data_ocr(test_split, processed_data_path):
 
 
 
-    X_train, X_testval, Y_train, Y_testval = train_test_split(np.asarray(captcha, dtype=object), np.asarray(captcha_labels, dtype=object), test_size=test_split)
-    X_test, X_val, Y_test, Y_val = train_test_split(X_testval, Y_testval, test_size=0.5)
+    X_train, X_testval, Y_train, Y_testval = train_test_split(np.asarray(captcha, dtype=object), np.asarray(captcha_labels, dtype=object), test_size=test_split, random_state=42)
+    X_test, X_val, Y_test, Y_val = train_test_split(X_testval, Y_testval, test_size=0.5, random_state=42)
 
     return X_train, X_test, X_val, Y_train, Y_test, Y_val
 
@@ -209,11 +209,3 @@ def get_split_data_ocr(processed_data_path):
             arrs[i*2 + 1].append(list(label))
 
     return np.asarray(arrs[0]), np.asarray(arrs[1]), np.asarray(arrs[2]), np.asarray(arrs[3]), np.asarray(arrs[4]), np.asarray(arrs[5])
-
-X_train, Y_train, X_test, Y_test, X_val, Y_val = get_split_data("./../split_processed_data/")
-print(X_train.shape)
-print(Y_train.shape)
-print(X_train.shape)
-print(Y_train.shape)
-print(X_train.shape)
-print(Y_train.shape)
