@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from preprocess import get_split_data
+from preprocess import retrieve_data
 
 
 def create_model(input_shape, encoder_size):
@@ -69,7 +69,7 @@ def get_accuracy(model, X_test, Y_test):
     return char_acc, captcha_acc
 
 
-def print_results(model, char_encoder, X_test, Y_test):
+def print_results(model, X_test, Y_test):
     """
     Prints an example CAPTCHA prediction vs. actual and prints accuracy
 
@@ -80,8 +80,9 @@ def print_results(model, char_encoder, X_test, Y_test):
     Y_test - True CAPTCHA labels to compare to
     """
     output = model.predict(X_test[6], verbose=0)
-    prediction_captcha = char_encoder.inverse_transform(np.argmax(output, axis=1))
-    real_captcha = char_encoder.inverse_transform(Y_test[6])
+    alphabet_key = dict(zip(range(0, 33), list('23456789ABCDEFGHJKLMNPQRSTUVWXYZ_')))
+    prediction_captcha = [alphabet_key[i] for i in np.argmax(output, axis=1)]
+    real_captcha = [alphabet_key[i] for i in np.asarray(Y_test[6])]
 
     # Convert accuracies to percentages
     char_acc, captcha_acc = get_accuracy(model, X_test, Y_test)
@@ -95,8 +96,9 @@ def print_results(model, char_encoder, X_test, Y_test):
 
 
 def main():
-    X_train, X_test, X_val, Y_train, Y_test, Y_val, char_encoder, encoder_size = \
-        get_split_data("./../split_processed_data/")
+    encoder_size = 31
+    X_train, Y_train, X_test, Y_test, X_val, Y_val = \
+        retrieve_data("./../data/split_processed_data/")
 
     input_shape=(X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
 
@@ -113,9 +115,9 @@ def main():
     )
 
     # Save model for future testing
-    model.save('./../models/segmented_2', save_format="h5")
+    model.save('./../models/segmented', save_format="h5")
 
-    print_results(model, char_encoder, X_test, Y_test)
+    print_results(model, X_test, Y_test)
 
 
 if __name__ == '__main__':
