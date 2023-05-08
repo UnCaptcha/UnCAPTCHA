@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from preprocess import retrieve_data_ocr
+from preprocess_ocr import retrieve_data_ocr
 
 
 def create_model(input_shape, encoder_size):
@@ -113,7 +113,7 @@ def print_results(model, X_test, Y_test):
     output = model.predict(X_test[1:2], verbose=0)
     output = np.transpose(output, axes=[1, 0, 2]).squeeze()
     output= np.argmax(output, axis=1)
-    prediction_captcha = np.asarray([np.asarray(tf.unique_with_counts(x)[0]) for x in output])
+    prediction_captcha = np.asarray(tf.unique_with_counts(output)[0])
 
     # Decode label's one hot encoding
     alphabet_key = dict(zip(range(0, 33), list('23456789ABCDEFGHJKLMNPQRSTUVWXYZ_')))
@@ -131,7 +131,7 @@ def print_results(model, X_test, Y_test):
 def main():
     encoder_size = 31
     X_train, Y_train, X_test, Y_test, X_val, Y_val = \
-        retrieve_data_ocr("./../data/split_processed_whole_data/")
+        retrieve_data_ocr("./../data/ocr_data_split/")
     # Input shape is the shape of X_train without batch_size attached
     input_shape=(X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
 
@@ -150,7 +150,7 @@ def main():
     )
 
     # Save model for future testing
-    model.save('./models/ocr', save_format="h5")
+    model.save('./../models/ocr', save_format="h5")
 
     print_results(model, X_test, Y_test)
 
