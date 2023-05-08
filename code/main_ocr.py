@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from itertools import groupby
 from get_data_ocr import retrieve_data_ocr
 
 
@@ -88,7 +89,7 @@ def get_accuracy(model, X_test, Y_test):
 
     # The output is from an LSTM which looks something like [1,1,31,25,7,7]
     # This takes it down to the four unique characters predicted in a row
-    prediction = np.asarray([np.asarray(tf.unique_with_counts(x)[0]) for x in output])
+    prediction = np.asarray([np.asarray([i[0] for i in groupby(x)]) for x in output])
     Y_test = np.asarray(Y_test)
 
     # Calculate accuracy by comparing predictions with truth.
@@ -113,7 +114,7 @@ def print_results(model, X_test, Y_test):
     output = model.predict(X_test[3:4], verbose=0)
     output = np.transpose(output, axes=[1, 0, 2]).squeeze()
     output= np.argmax(output, axis=1)
-    prediction_captcha = np.asarray(tf.unique_with_counts(output)[0])
+    prediction_captcha = np.asarray([i[0] for i in groupby(output)])
 
     # Decode label's one hot encoding
     alphabet_key = dict(zip(range(0, 33), list('23456789ABCDEFGHJKLMNPQRSTUVWXYZ_')))
@@ -139,19 +140,19 @@ def main():
     # Fit model
     # NOTE: encoder_size incremented by 1 is necessary here AND inside the model for CTC_loss to work
     # Having it twice is NOT an error.
-    model = create_model(input_shape, (encoder_size+1))
-    model.compile(loss=ctc,
-                    optimizer=tf.keras.optimizers.Adam(.0001))
-    model.fit(
-        X_train,
-        Y_train,
-        epochs=80,
-        batch_size=256,
-        validation_data=(X_val, Y_val)
-    )
+    # model = create_model(input_shape, (encoder_size+1))
+    # model.compile(loss=ctc,
+    #                 optimizer=tf.keras.optimizers.Adam(.0001))
+    # model.fit(
+    #     X_train,
+    #     Y_train,
+    #     epochs=80,
+    #     batch_size=256,
+    #     validation_data=(X_val, Y_val)
+    # )
 
-    # Save model for future testing
-    model.save('./../models/ocr', save_format="h5")
+    # # Save model for future testing
+    # model.save('./../models/ocr', save_format="h5")
 
     model = tf.keras.models.load_model("./../models/ocr", custom_objects={"ctc": ctc})
     print_results(model, X_test, Y_test)
