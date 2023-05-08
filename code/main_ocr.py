@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from preprocess_ocr import retrieve_data_ocr
+from get_data_ocr import retrieve_data_ocr
 
 
 def create_model(input_shape, encoder_size):
@@ -110,14 +110,15 @@ def print_results(model, X_test, Y_test):
     X_test - CAPTCHA images to test with
     Y_test - True CAPTCHA labels to compare to
     """
-    output = model.predict(X_test[1:2], verbose=0)
+    output = model.predict(X_test[3:4], verbose=0)
     output = np.transpose(output, axes=[1, 0, 2]).squeeze()
     output= np.argmax(output, axis=1)
     prediction_captcha = np.asarray(tf.unique_with_counts(output)[0])
 
     # Decode label's one hot encoding
     alphabet_key = dict(zip(range(0, 33), list('23456789ABCDEFGHJKLMNPQRSTUVWXYZ_')))
-    real_captcha = [alphabet_key[i] for i in np.asarray(Y_test[1])]
+    prediction_captcha = [alphabet_key[i] for i in prediction_captcha]
+    real_captcha = [alphabet_key[i] for i in np.asarray(Y_test[3])]
 
     # Get accuracy
     accuracy = get_accuracy(model, X_test, Y_test)
@@ -133,7 +134,7 @@ def main():
     X_train, Y_train, X_test, Y_test, X_val, Y_val = \
         retrieve_data_ocr("./../data/ocr_data_split/")
     # Input shape is the shape of X_train without batch_size attached
-    input_shape=(X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
+    input_shape = (X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
 
     # Fit model
     # NOTE: encoder_size incremented by 1 is necessary here AND inside the model for CTC_loss to work
@@ -152,6 +153,7 @@ def main():
     # Save model for future testing
     model.save('./../models/ocr', save_format="h5")
 
+    model = tf.keras.models.load_model("./../models/ocr", custom_objects={"ctc": ctc})
     print_results(model, X_test, Y_test)
 
 

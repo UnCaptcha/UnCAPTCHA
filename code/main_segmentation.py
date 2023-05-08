@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from preprocess_segmentation import retrieve_data
+from get_data_segmentation import retrieve_data
 
 
 def create_model(input_shape, encoder_size):
@@ -100,7 +100,7 @@ def main():
     X_train, Y_train, X_test, Y_test, X_val, Y_val = \
         retrieve_data("./../data/segmented_data_split/")
 
-    input_shape=(X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
+    input_shape = (X_train.shape[-3], X_train.shape[-2], X_train.shape[-1])
 
     # Fit model
     model = create_model(input_shape, encoder_size)
@@ -116,6 +116,8 @@ def main():
 
     # Save model for future testing
     model.save('./../models/segmented', save_format="h5")
+
+    model = tf.keras.models.load_model("./../models/segmented")
 
     print_results(model, X_test, Y_test)
 
