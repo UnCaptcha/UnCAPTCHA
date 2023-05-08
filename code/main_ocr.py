@@ -55,25 +55,23 @@ def ctc(y_true, y_pred):
     Output:
     loss - Loss as calculated by ctc_batch_cost
     """
+    # NOTE: Must use tf.shape instead of numpy's .shape as shapes need to be tensors.
 
     # Cast true labels to ints
     y_true = tf.cast(y_true, tf.int32)
 
-    # Calculate label_length and input_length sizes for ctc_batch_cost by appending batch size
-    y_pred_shape = tf.cast(tf.shape(y_pred)[1], dtype = tf.int32)
-    y_true_shape = tf.cast(tf.shape(y_true)[1], dtype = tf.int32)
-    batch_size   = tf.cast(tf.shape(y_true)[0], dtype = tf.int32)
+    batch_size   = tf.shape(y_true)[0]
 
     # Make an extender of all ones with proper shape
     y_pred_extender = tf.ones(shape = (batch_size, 1), dtype = tf.int32)
     y_true_extender = tf.ones(shape = (batch_size, 1), dtype = tf.int32)
 
-    input_length = y_pred_shape * y_pred_extender
-    label_length = y_true_shape * y_true_extender
+    # Multiply shapes by extenders to get a Tensor of the correct shape
+    input_length = tf.shape(y_pred)[1] * y_pred_extender
+    label_length = tf.shape(y_true)[1] * y_true_extender
 
-    loss = tf.keras.backend.ctc_batch_cost(y_true, y_pred, label_length = label_length, input_length = input_length)
-
-    return loss
+    # Calculate and return loss
+    return tf.keras.backend.ctc_batch_cost(y_true, y_pred, label_length = label_length, input_length = input_length)
 
 
 def get_accuracy(model, X_test, Y_test):
