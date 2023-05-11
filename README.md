@@ -20,6 +20,41 @@ We have pre-saved trained models to `models/ocr` and `models/segmented`! Follow 
 
 ### 1. Preprocessing
 
-### 2. Running the models
+### 2. Training the Models
 
-To train and test the segmentation (CNN) model, run `code/main_segmentation.py`. This will re-save a trained model to `models/segmented`, and print out the reported accuracy. To train and test the OCR (CRNN) model, run `code/main_ocr.py`. This will re-save a trained model to `models/ocr`, and print out the reported accuracy.  
+To train and test the segmentation (CNN) model, run `code/main_segmentation.py`. This will re-save a trained model to `models/segmented`, and print out the reported test accuracy. To train and test the OCR (CRNN) model, run `code/main_ocr.py`. This will re-save a trained model to `models/ocr`, and print out the reported test accuracy. To customize hyperparameters, modify the `EPOCHS`, `LEARNING_RATE`, and `BATCH_SIZE` constants declared at the beginning of both files. 
+
+### 3. Using the Models. 
+
+**Segmentation Model**
+
+To load and run the segmentation model, use the following code block (also found in `code/main_segmentation.py`):
+
+```
+model = tf.keras.models.load_model("./../models/segmented")
+output = model.predict(<SAMPLE>, verbose=0)
+
+# Decode label's one hot encoding
+alphabet_key = dict(zip(range(0, 33), list('23456789ABCDEFGHJKLMNPQRSTUVWXYZ_')))
+prediction_captcha = [alphabet_key[i] for i in np.argmax(output, axis=1)]
+```
+
+**OCR Model**
+
+To load and run the OCR model, use the following code block (also found in `code/main_ocr.py`). Additionally, please ensure you have imported our custom ctc loss function, `ctc`, from `code/main_ocr.py`.
+
+```
+model = tf.keras.models.load_model("./../models/ocr", custom_objects={"ctc": ctc})
+output = model.predict(<SAMPLE>, verbose=0)
+
+# Convert to characters, remove repeats and blank characters
+output = np.transpose(output, axes=[1, 0, 2]).squeeze()
+output= np.argmax(output, axis=1)
+prediction_captcha = np.asarray([i[0] for i in groupby(output)])
+prediction_captcha = prediction_captcha[prediction_captcha != 32]
+
+# Decode label's one hot encoding
+alphabet_key = dict(zip(range(0, 33), list('23456789ABCDEFGHJKLMNPQRSTUVWXYZ_')))
+prediction_captcha = [alphabet_key[i] for i in prediction_captcha]
+```
+
