@@ -14,6 +14,8 @@ Text-based CAPTCHA, Completely Automated Public Turing tests to tell Computers a
 
 ## Results
 
+For the segmented model, we achieved a character accuracy of 93.92% and CAPTCHA accuracy of 76.92%. For the OCR model, we achieved a character and CAPTCHA accuracy of 86.1% and 54.92%, respectively.
+
 ## Instructions to Run
 
 We have pre-saved trained models to `models/ocr` and `models/segmented`! Follow the instructions below to recreate our results.
