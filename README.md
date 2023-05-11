@@ -18,13 +18,31 @@ Text-based CAPTCHA, Completely Automated Public Turing tests to tell Computers a
 
 We have pre-saved trained models to `models/ocr` and `models/segmented`! Follow the instructions below to recreate our results.
 
-### 1. Preprocessing
+### Preprocessing
 
-### 2. Training the Models
+1. Download the data from [Kaggle](https://www.kaggle.com/datasets/fanbyprinciple/captcha-images) and store the images in the `data/raw_data/` folder.
+
+2. Open and run each block of `code/preprocessing.ipynb` to derive the respective preprocessed data for the segmentation and OCR models.
+
+This will provide the necessary preprocessed data to run `code/main_ocr.py` and `code/main_segmentation.py`.
+
+The data will be stored as follows:
+
+```
+data/
+  raw_data/
+  segmented_data/
+  segmented_data_split/
+  ocr_data/
+  ocr_data_split/
+```
+The raw_data folder will contain your original data. Each of the `segmented_data` and `ocr_data` folders will contain the preprocessed data for their respective tasks. Finally, each of `segmented_data_split` and `ocr_data_split` folders will contain their data split into train/test/validation folders.
+
+### Training the Models
 
 To train and test the segmentation (CNN) model, run `code/main_segmentation.py`. This will re-save a trained model to `models/segmented`, and print out the reported test accuracy. To train and test the OCR (CRNN) model, run `code/main_ocr.py`. This will re-save a trained model to `models/ocr`, and print out the reported test accuracy. To customize hyperparameters, modify the `EPOCHS`, `LEARNING_RATE`, and `BATCH_SIZE` constants declared at the beginning of both files. 
 
-### 3. Using the Models. 
+### Using the Models
 
 **Segmentation Model**
 
