@@ -16,8 +16,10 @@ Text-based CAPTCHA, Completely Automated Public Turing tests to tell Computers a
 
 ## Instructions to Run
 
+We have pre-saved trained models to `models/ocr` and `models/segmented`! Follow the instructions below to recreate our results.
+
 ### 1. Preprocessing
 
 ### 2. Running the models
 
-To train and test the segmentation model, simply run `code/main_segmentation.py`. This will save a trained model to `models/segmented`, and print out the reported accuracy. 
+To train and test the segmentation (CNN) model, run `code/main_segmentation.py`. This will re-save a trained model to `models/segmented`, and print out the reported accuracy. To train and test the OCR (CRNN) model, run `code/main_ocr.py`. This will re-save a trained model to `models/ocr`, and print out the reported accuracy.  
