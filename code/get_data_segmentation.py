@@ -3,62 +3,6 @@ import tensorflow as tf
 from sklearn import preprocessing
 import cv2
 import os
-from sklearn.model_selection import train_test_split
-
-
-def get_data():
-    """
-    Returns the data split into the proper train/test/val split.
-    """
-    processed_data_path = "./../data/segmented_data"
-    images = []
-    labels = []
-    captcha = []
-    captcha_labels = []
-    count = 0
-    # Create images and labels and in a shape such that each CAPTCHAs individual letter images are kept together
-    for image_path in sorted(os.listdir(processed_data_path)):
-        count += 1
-        image = cv2.imread(processed_data_path + image_path, cv2.IMREAD_GRAYSCALE)
-
-        label = image_path.split('.')[0][-1]
-        captcha.append(image)
-        captcha_labels.append(label)
-
-        if count % 4 == 0:
-            images.append(captcha)
-            labels.append(captcha_labels)
-            captcha = []
-            captcha_labels = []
-
-    X_train, X_testval, Y_train, Y_testval = train_test_split(np.asarray(images, dtype=object), np.asarray(labels, dtype=object), test_size=.3, random_state=42)
-    X_test, X_val, Y_test, Y_val = train_test_split(X_testval, Y_testval, test_size=0.5, random_state=42)
-
-    return X_train, X_test, X_val, Y_train, Y_test, Y_val
-
-
-def split_it_up():
-    """
-    Gets processed data from original folder and splits it into new folders train, test, and val
-    """
-    save_folder = "./../data/segmented_data_split/"
-    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data(0.3, "./../data/segmented_data/")
-
-    # For each of train,test,val save the respective images to these new folders.
-    for imgs, labels in zip(X_train, Y_train):
-        for i, img in enumerate(imgs):
-            item_name = ''.join(labels) + "_" + str(i) + "_" + labels[i]
-            cv2.imwrite(save_folder + "train/" + item_name + '.png', np.asarray(img, dtype=np.uint8))
-
-    for imgs, labels in zip(X_test, Y_test):
-        for i, img in enumerate(imgs):
-            item_name = ''.join(labels) + "_" + str(i) + "_" + labels[i]
-            cv2.imwrite(save_folder + "test/" + item_name + '.png', np.asarray(img, dtype=np.uint8))
-
-    for imgs, labels in zip(X_val, Y_val):
-        for i, img in enumerate(imgs):
-            item_name = ''.join(labels) + "_" + str(i) + "_" + labels[i]
-            cv2.imwrite(save_folder + "val/" + item_name + '.png', np.asarray(img, dtype=np.uint8))
 
 
 def retrieve_data(data_path):

@@ -3,6 +3,10 @@ import tensorflow as tf
 from itertools import groupby
 from get_data_ocr import retrieve_data_ocr
 
+# Hyperparameters
+EPOCHS = 80
+BATCH_SIZE = 256
+LEARNING_RATE = .0001
 
 def create_model(input_shape, encoder_size):
     """
@@ -148,12 +152,12 @@ def main():
     # Having it twice is NOT an error.
     model = create_model(input_shape, (encoder_size+1))
     model.compile(loss=ctc,
-                    optimizer=tf.keras.optimizers.Adam(.0001))
+                    optimizer=tf.keras.optimizers.Adam(LEARNING_RATE))
     model.fit(
         X_train,
         Y_train,
-        epochs=80,
-        batch_size=256,
+        epochs=EPOCHS,
+        batch_size=BATCH_SIZE,
         validation_data=(X_val, Y_val)
     )
 

@@ -3,46 +3,6 @@ import tensorflow as tf
 from sklearn import preprocessing
 import cv2
 import os
-from sklearn.model_selection import train_test_split
-
-
-def get_data_ocr():
-    """
-    Returns the data split into the proper train/test/val split.
-    """
-    processed_data_path = "./../data/ocr_data/"
-    captcha = []
-    captcha_labels = []
-    for image_path in sorted(os.listdir(processed_data_path)):
-        image = cv2.imread(processed_data_path + image_path, cv2.IMREAD_GRAYSCALE)
-
-        label = image_path.split('.')[0]
-        captcha.append(image)
-        captcha_labels.append(list(label))
-
-    X_train, X_testval, Y_train, Y_testval = train_test_split(np.asarray(captcha, dtype=object), np.asarray(captcha_labels, dtype=object), test_size=.3, random_state=42)
-    X_test, X_val, Y_test, Y_val = train_test_split(X_testval, Y_testval, test_size=0.5, random_state=42)
-
-    return X_train, X_test, X_val, Y_train, Y_test, Y_val
-
-
-def split_it_up_ocr():
-    """
-    Gets processed data from original folder and splits it into new folders train, test, and val
-    """
-    save_folder = "./../data/ocr_data_split/"
-    X_train, X_test, X_val, Y_train, Y_test, Y_val = get_data_ocr()
-    for img, label in zip(X_train, Y_train):
-        item_name = ''.join(label)
-        cv2.imwrite(save_folder + "train/" + item_name + '.png', np.asarray(img, dtype=np.uint8))
-
-    for img, label in zip(X_test, Y_test):
-        item_name = ''.join(label)
-        cv2.imwrite(save_folder + "test/" + item_name + '.png', np.asarray(img, dtype=np.uint8))
-
-    for img, label in zip(X_val, Y_val):
-        item_name = ''.join(label)
-        cv2.imwrite(save_folder + "val/" + item_name + '.png', np.asarray(img, dtype=np.uint8))
 
 
 def retrieve_data_ocr(data_path):

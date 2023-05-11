@@ -2,6 +2,11 @@ import numpy as np
 import tensorflow as tf
 from get_data_segmentation import retrieve_data
 
+# Hyperparameters
+EPOCHS = 3
+BATCH_SIZE = 265
+LEARNING_RATE = .0001
+
 
 def create_model(input_shape, encoder_size):
     """
@@ -105,12 +110,12 @@ def main():
     # Fit model
     model = create_model(input_shape, encoder_size)
     model.compile(loss='categorical_crossentropy',
-                  optimizer=tf.keras.optimizers.Adam(.0001))
+                  optimizer=tf.keras.optimizers.Adam(LEARNING_RATE))
     model.fit(
         X_train,
         Y_train,
-        epochs=3,
-        batch_size=265,
+        epochs=EPOCHS,
+        batch_size=BATCH_SIZE,
         validation_data=(X_val, Y_val)
     )
 
